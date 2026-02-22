@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .website-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .website-item input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .website-item button {
+            width: 80px;
+        }
+
+        #preview {
+            margin-top: 10px;
+            max-width: 100px;
+            border-radius: 50%;
+        }
+
+        .password-section {
+            margin-bottom: 30px;
+        }
+
+        .config-section {
+            display: none;
+        }
+
+        .actions {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 密码验证 -->
+        <div class="password-section" id="passwordSection">
+            <h1>导航管理后台</h1>
+            <div class="form-group">
+                <label for="adminPwd">请输入管理密码</label>
+                <input type="password" id="adminPwd" placeholder="默认密码：123456">
+            </div>
+            <button class="btn" onclick="checkPassword()">登录</button>
+        </div>
+
+        <!-- 配置区域 -->
+        <div class="config-section" id="configSection">
+            <!-- 基础设置 -->
+            <h2>基础设置</h2>
+            <div class="form-group">
+                <label for="siteTitle">网站标题</label>
+                <input type="text" id="siteTitle" placeholder="例如：我的极简导航">
+            </div>
+            <div class="form-group">
+                <label for="logoUrl">Logo图片地址</label>
+                <input type="text" id="logoUrl" placeholder="输入图片URL，例如：https://picsum.photos/120/120">
+                <img id="preview" src="" alt="Logo预览">
+            </div>
+            <div class="form-group">
+                <label for="backgroundUrl">背景图片地址</label>
+                <input type="text" id="backgroundUrl" placeholder="输入图片URL，例如：https://picsum.photos/1920/1080?blur=2">
+            </div>
+            <div class="form-group">
+                <label for="containerOpacity">容器透明度 (0-1)</label>
+                <input type="number" id="containerOpacity" step="0.1" min="0" max="1" placeholder="例如：0.2">
+            </div>
+            <div class="form-group">
+                <label for="blurRadius">毛玻璃模糊半径 (px)</label>
+                <input type="number" id="blurRadius" min="0" max="50" placeholder="例如：10">
+            </div>
+
+            <!-- 导航链接管理 -->
+            <h2>导航链接管理</h2>
+            <div id="websitesList">
+                <!-- 动态生成网站项 -->
+            </div>
+            <button class="btn btn-success" onclick="addWebsiteItem()">添加新链接</button>
+
+            <!-- 操作按钮 -->
+            <div class="actions">
+                <button class="btn" onclick="saveConfig()">保存所有设置</button>
+                <button class="btn btn-danger" onclick="resetConfig()">恢复默认设置</button>
+                <a href="index.html" class="btn" style="text-decoration: none; display: inline-block;">返回首页</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 管理密码（可自行修改）
+        const ADMIN_PASSWORD = "123456";
+        // 默认配置
+        const defaultConfig = {
+            siteTitle: "我的极简导航",
+            logoUrl: "https://picsum.photos/120/120",
+            backgroundUrl: "https://picsum.photos/1920/1080?blur=2",
+            containerOpacity: 0.2,
+            blurRadius: 10,
+            websites: [
+                { name: "百度", url: "https://www.baidu.com", icon: "https://www.baidu.com/favicon.ico" },
+                { name: "GitHub", url: "https://github.com", icon: "https://github.githubassets.com/favicons/favicon.ico" },
+                { name: "B站", url: "https://www.bilibili.com", icon: "https://static.hdslb.com/mobile/img/favicon.ico" }
+            ]
+        };
+
+        // 密码验证
+        function checkPassword() {
+            const inputPwd = document.getElementById('adminPwd').value;
+            if (inputPwd === ADMIN_PASSWORD) {
+                document.getElementById('passwordSection').style.display = 'none';
+                document.getElementById('configSection').style.display = 'block';
+                loadConfig(); // 加载配置
+            } else {
+                alert('密码错误！默认密码是 123456');
+            }
+        }
+
+        // 获取当前配置
+        function getCurrentConfig() {
+            const savedConfig = localStorage.getItem('navConfig');
+            return savedConfig ? JSON.parse(savedConfig) : defaultConfig;
+        }
+
+        // 加载配置到表单
+        function loadConfig() {
+            const config = getCurrentConfig();
+            
+            // 填充基础设置
+            document.getElementById('siteTitle').value = config.siteTitle;
+            document.getElementById('logoUrl').value = config.logoUrl;
+            document.getElementById('backgroundUrl').value = config.backgroundUrl;
+            document.getElementById('containerOpacity').value = config.containerOpacity;
+            document.getElementById('blurRadius').value = config.blurRadius;
+            
+            // 预览Logo
+            document.getElementById('preview').src = config.logoUrl;
+            
+            // 加载导航链接
+            renderWebsiteItems(config.websites);
+        }
+
+        // 渲染导航链接项
+        function renderWebsiteItems(websites) {
+            const listContainer = document.getElementById('websitesList');
+            listContainer.innerHTML = '';
+            
+            websites.forEach((site, index) => {
+                const item = document.createElement('div');
+                item.className = 'website-item';
+                item.innerHTML = `
+                    <input type="text" placeholder="网站名称" value="${site.name}" id="siteName_${index}">
+                    <input type="text" placeholder="网站链接" value="${site.url}" id="siteUrl_${index}">
+                    <input type="text" placeholder="图标地址" value="${site.icon}" id="siteIcon_${index}">
+                    <button class="btn btn-danger" onclick="deleteWebsiteItem(${index})">删除</button>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        // 添加新的导航项
+        function addWebsiteItem() {
+            const config = getCurrentConfig();
+            config.websites.push({ name: '', url: '', icon: '' });
+            renderWebsiteItems(config.websites);
+        }
+
+        // 删除导航项
+        function deleteWebsiteItem(index) {
+            const config = getCurrentConfig();
+            config.websites.splice(index, 1);
+            renderWebsiteItems(config.websites);
+        }
+
+        // 保存所有配置
+        function saveConfig() {
+            const config = {
+                siteTitle: document.getElementById('siteTitle').value,
+                logoUrl: document.getElementById('logoUrl').value,
+                backgroundUrl: document.getElementById('backgroundUrl').value,
+                containerOpacity: parseFloat(document.getElementById('containerOpacity').value),
+                blurRadius: parseInt(document.getElementById('blurRadius').value),
+                websites: []
+            };
+
+            // 收集导航链接
+            const websiteItems = document.querySelectorAll('.website-item');
+            websiteItems.forEach((item, index) => {
+                const name = document.getElementById(`siteName_${index}`).value;
+                const url = document.getElementById(`siteUrl_${index}`).value;
+                const icon = document.getElementById(`siteIcon_${index}`).value;
+                if (name && url) { // 至少填了名称和链接才保存
+                    config.websites.push({ name, url, icon });
+                }
+            });
+
+            // 保存到localStorage
+            localStorage.setItem('navConfig', JSON.stringify(config));
+            alert('配置保存成功！');
+            // 刷新预览
+            document.getElementById('preview').src = config.logoUrl;
+        }
+
+        // 恢复默认配置
+        function resetConfig() {
+            if (confirm('确定要恢复默认设置吗？所有自定义内容都会丢失！')) {
+                localStorage.setItem('navConfig', JSON.stringify(defaultConfig));
+                loadConfig();
+                alert('已恢复默认配置！');
+            }
+        }
+
+        // IE兼容处理
+        if (!Element.prototype.addEventListener) {
+            Element.prototype.addEventListener = function (event, func) {
+                this.attachEvent('on' + event, func);
+            };
+        }
+
+        // 监听Logo输入变化，实时预览
+        document.getElementById('logoUrl').addEventListener('input', function() {
+            document.getElementById('preview').src = this.value || 'https://picsum.photos/120/120';
+        });
+    </script>
+</body>
+</html>
